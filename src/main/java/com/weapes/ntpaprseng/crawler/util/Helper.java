@@ -39,6 +39,8 @@ public final class Helper {
     public static boolean isDesided = false;
     public static boolean isFirstPaperLink = true;
     public static String lastUrlForLastTime = null;
+    public static boolean isCrawlFinished = false;
+    public static boolean isUpdateFinished = false;
     private static final OkHttpClient OK_HTTP_CLIENT =
             new OkHttpClient.Builder()
                     .readTimeout(1, TimeUnit.MINUTES)
@@ -56,7 +58,7 @@ public final class Helper {
     private static final String DATE_FORMAT =
             "yyyy年MM月dd日 HH:mm";
     private static final String UPDATE_TIME_FORMAT =
-            "yyyy年MM月dd日";
+            "yyyy年MM月dd日 HH:mm:ss:SSS";
     static {
         PropertyConfigurator.configure(
                 getCfg().getString("log4j")
@@ -304,5 +306,21 @@ public final class Helper {
             e.printStackTrace();
         }
         return jsonObject.getJSONObject("interval").getInteger("task_period");
+    }
+
+    public static boolean isCrawlFinished() {
+        return isCrawlFinished;
+    }
+
+    public static void setIsCrawlFinished(boolean isCrawlFinished) {
+        Helper.isCrawlFinished = isCrawlFinished;
+    }
+
+    public static boolean isUpdateFinished() {
+        return isUpdateFinished;
+    }
+
+    public static void setIsUpdateFinished(boolean isUpdateFinished) {
+        Helper.isUpdateFinished = isUpdateFinished;
     }
 }

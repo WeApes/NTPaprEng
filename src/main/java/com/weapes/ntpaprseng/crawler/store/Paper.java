@@ -149,27 +149,25 @@ public class Paper implements Storable {
         // 从DB连接池得到连接
         try (final Connection connection = mysqlDataSource.getConnection()) {
             boolean isSucceed = true;
-
             try {
                 final PreparedStatement paperPreparedStatement =
                         connection.prepareStatement(NT_PAPERS_INSERT_SQL);
                 bindPaperSQL(paperPreparedStatement);
                 System.out.println("sql exeing");
                 // 判断爬取论文信息操作是否成功
-                isSucceed = paperPreparedStatement.executeUpdate() != 0;
+                paperPreparedStatement.executeUpdate();
             } catch (SQLException e) {
                 System.out.print(e.getSQLState() + "  " + e.getMessage());
-                isSucceed = false;
             }
-            boolean isSuccess = putNTPaperIntoES();//保存论文信息到ES中
-            if (!isSuccess) {
+            isSucceed = putNTPaperIntoES();//保存论文信息到ES中
+            if (!isSucceed) {
                 System.out.println("保存论文信息到ElasticSearch中的NT_PAPER失败");
             }
             try {
                 final PreparedStatement refPreparedStatement =
                         connection.prepareStatement(REF_INSERT_SQL);
                 bindRefSQL(refPreparedStatement);
-                System.out.println("store metrix url to  REF_DATA");
+                System.out.println("store metrix url to REF_DATA");
                 refPreparedStatement.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -183,9 +181,11 @@ public class Paper implements Storable {
             }
             DBLog.saveCrawlDetailLog(getUrl(), Log.getCrawlingNumbers().get(),Log.getUrlNumbers().get(),isSucceed,Helper.getCrawlTime());
             if (getLastLink().equals(getUrl())) {
+                Helper.setIsCrawlFinished(true);
                 LOGGER.info("爬取完成，本次爬取论文总量：" + getUrlNumbers().get()
                         + " 成功数：" + getCrawlingSucceedNumbers().get()
                         + " 失败数：" + getCrawlingFailedNumber().get());
+
                 long startTime = PaperLink.getStartMillisecond();//开始爬取的时间
                 long endTime = System.currentTimeMillis();//结束爬取的时间
                 long total = endTime - startTime;
@@ -197,7 +197,7 @@ public class Paper implements Storable {
             //更新爬取检查状态参数
             Helper.isFirstCrawl = false;
             isDesided = false;
-            isFirstPaperLink = true;
+            Helper.isFirstPaperLink = true;
             return isSucceed;
         } catch (SQLException e) {
             e.printStackTrace();

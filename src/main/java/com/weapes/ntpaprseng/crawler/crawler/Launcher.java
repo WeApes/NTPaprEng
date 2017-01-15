@@ -1,5 +1,4 @@
 package com.weapes.ntpaprseng.crawler.crawler;
-
 import com.weapes.ntpaprseng.crawler.util.Helper;
 
 
@@ -10,26 +9,28 @@ import java.util.concurrent.TimeUnit;
  */
 public class Launcher {
     public static void main(String args[]) {
-        System.out.print("系统开始运行。\n");
+        System.out.print("系统运行。\n");
         while (true) {
-            Thread paperCrawlerTask = new Thread(new Task(new PaperCrawler()));
-            Thread detailCrawlerTask = new Thread(new Task(new DetailCrawler()));
-            paperCrawlerTask.start();
-            try {
-                paperCrawlerTask.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            new PaperCrawler().crawl();
+            while (!Helper.isCrawlFinished()) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            detailCrawlerTask.start();
-            try {
-                detailCrawlerTask.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            new DetailCrawler().crawl();
+            while (!Helper.isUpdateFinished()) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             try {
                 long pause = Helper.getTaskPeriod();
                 System.out.print(pause + "!!!!!!!!!!!\n");
-                TimeUnit.MINUTES.sleep(pause);
+                TimeUnit.SECONDS.sleep(pause);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -37,16 +38,3 @@ public class Launcher {
     }
 }
 
-class Task implements Runnable{
-
-    Crawler crawler;
-
-    Task(Crawler crawler) {
-        this.crawler = crawler;
-    }
-
-    @Override
-    public synchronized void run() {
-        crawler.crawl();
-    }
-}
