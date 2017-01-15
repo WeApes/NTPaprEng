@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Launcher {
     public static void main(String args[]) {
-        System.out.print("系统开始运行。\n");
+        System.out.print("系统运行。\n");
         while (true) {
             Thread paperCrawlerTask = new Thread(new Task(new PaperCrawler()));
             Thread detailCrawlerTask = new Thread(new Task(new DetailCrawler()));
