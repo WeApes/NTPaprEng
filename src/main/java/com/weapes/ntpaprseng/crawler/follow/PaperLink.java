@@ -39,8 +39,8 @@ public class PaperLink extends Link {
                 + "正在爬取第" + Log.getCrawlingNumbers().incrementAndGet() + "篇\n"
                 + "链接为：" + getUrl());
         if (getCrawlingNumbers().get()==1){
-            startMillisecond=System.currentTimeMillis();
-            startTime=Helper.getCrawlTime();
+                startMillisecond=System.currentTimeMillis();
+                startTime=Helper.getCrawlTime();
         }
         if (Log.getUrlNumbers().get() == Log.getCrawlingNumbers().get()) {
             Log.setLastLink(getUrl());

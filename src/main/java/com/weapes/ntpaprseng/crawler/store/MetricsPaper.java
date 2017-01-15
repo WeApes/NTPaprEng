@@ -183,7 +183,7 @@ public class MetricsPaper implements Storable{
                 + "链接为：" + getUrl());
         final HikariDataSource mysqlDataSource = DataSource.getMysqlDataSource();
         // 加上选择条件 URL
-        REF_UPDATE_SQL = REF_UPDATE_SQL + "'" + getUrl() + "'";
+        REF_UPDATE_SQL =SQLHelper.getRefInsertSQL();
         try (final Connection connection = mysqlDataSource.getConnection()){
             try (final PreparedStatement preparedStatement = connection.prepareStatement(REF_UPDATE_SQL)) {
                 bindUpdateSql(preparedStatement);
@@ -207,6 +207,7 @@ public class MetricsPaper implements Storable{
                         DetailCrawler.getUpdateTime());
 
                 if (getCurrentUpdateNumbers().get() == getUpdateTotalNumbers().get()) {
+                    Helper.setIsUpdateFinished(true);
                     LOGGER.info("更新完成，本次更新相关指标论文总量：" +getUpdateTotalNumbers().get()
                             + " 成功数：" + getUpdateSucceedNumbers().get()
                             + " 失败数：" + getUpdateFailedNumbers());
@@ -216,9 +217,11 @@ public class MetricsPaper implements Storable{
                     String averageTime=Helper.getSeconds(total/getUrlNumbers().get());
                     //保存更新完成后的总体情况数据到数据库中
                     DBLog.saveFinalUpdateLog(DetailCrawler.getUpdateTime(),getUpdateSucceedNumbers().get(),
-                            getUpdateFailedNumbers().get(),getUpdateTotalNumbers().get());
+                            getUpdateFailedNumbers().get(),getUpdateTotalNumbers().get(),averageTime);
                 }
                 return succeed;
+            }catch (SQLException e){
+                e.printStackTrace();
             }
         }catch (SQLException e){
             e.printStackTrace();
@@ -227,27 +230,28 @@ public class MetricsPaper implements Storable{
     }
 
     private void bindUpdateSql(final PreparedStatement preparedStatement) throws SQLException{
-        preparedStatement.setString(1, Helper.getUpdateTime());
-        preparedStatement.setInt(2, getPageViews());
-        preparedStatement.setInt(3,getWebOfScience());
-        preparedStatement.setInt(4,getCrossRef());
-        preparedStatement.setInt(5,getScopus());
-        preparedStatement.setInt(6,getNewsOutlets());
-        preparedStatement.setInt(7,getReddit());
-        preparedStatement.setInt(8,getBlog());
-        preparedStatement.setInt(9,getTweets());
-        preparedStatement.setInt(10,getFacebook());
-        preparedStatement.setInt(11,getGoogle());
-        preparedStatement.setInt(12,getPinterest());
-        preparedStatement.setInt(13,getWikipedia());
-        preparedStatement.setInt(14,getMendeley());
-        preparedStatement.setInt(15,getCiteUlink());
-        preparedStatement.setInt(16,getZotero());
-        preparedStatement.setInt(17,getF1000());
-        preparedStatement.setInt(18,getVideo());
-        preparedStatement.setInt(19,getLinkedin());
-        preparedStatement.setInt(20,getQ_a());
-        preparedStatement.setInt(21,getFinalIndex());
+        preparedStatement.setString(1, getUrl());
+        preparedStatement.setString(2, Helper.getUpdateTime());
+        preparedStatement.setInt(3, getPageViews());
+        preparedStatement.setInt(4,getWebOfScience());
+        preparedStatement.setInt(5,getCrossRef());
+        preparedStatement.setInt(6,getScopus());
+        preparedStatement.setInt(7,getNewsOutlets());
+        preparedStatement.setInt(8,getReddit());
+        preparedStatement.setInt(9,getBlog());
+        preparedStatement.setInt(10,getTweets());
+        preparedStatement.setInt(11,getFacebook());
+        preparedStatement.setInt(12,getGoogle());
+        preparedStatement.setInt(13,getPinterest());
+        preparedStatement.setInt(14,getWikipedia());
+        preparedStatement.setInt(15,getMendeley());
+        preparedStatement.setInt(16,getCiteUlink());
+        preparedStatement.setInt(17,getZotero());
+        preparedStatement.setInt(18,getF1000());
+        preparedStatement.setInt(19,getVideo());
+        preparedStatement.setInt(20,getLinkedin());
+        preparedStatement.setInt(21,getQ_a());
+        preparedStatement.setInt(22,getFinalIndex());
     }
 
 
