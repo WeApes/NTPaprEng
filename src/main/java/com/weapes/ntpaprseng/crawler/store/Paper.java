@@ -180,24 +180,20 @@ public class Paper implements Storable {
                         + "链接为；" + getUrl());
             }
             DBLog.saveCrawlDetailLog(getUrl(), Log.getCrawlingNumbers().get(),Log.getUrlNumbers().get(),isSucceed,Helper.getCrawlTime());
-            if (getLastLink().equals(getUrl())) {
-                Helper.setIsCrawlFinished(true);
+            if (getLastLink().equals(getUrl())) { //爬取完成还要更改isFirstUrl为true，下次爬取可以利用
+                Helper.isFirstUrl = true;
+                Helper.isCrawlFinished = true;
                 LOGGER.info("爬取完成，本次爬取论文总量：" + getUrlNumbers().get()
                         + " 成功数：" + getCrawlingSucceedNumbers().get()
                         + " 失败数：" + getCrawlingFailedNumber().get());
-
+                getUrlNumbers().set(0); //重置
                 long startTime = PaperLink.getStartMillisecond();//开始爬取的时间
                 long endTime = System.currentTimeMillis();//结束爬取的时间
-                long total = endTime - startTime;
-                String averageTime = Helper.getSeconds(total / getUrlNumbers().get());
+                String averageTime = Helper.getSeconds((endTime - startTime) / getUrlNumbers().get());
                 //保存爬取完成的总体情况数据到数据库中
                 DBLog.saveFinalCrawlLog(PaperLink.getStartTime(),getCrawlingSucceedNumbers().get(),
                         getCrawlingFailedNumber().get(),getUrlNumbers().get(),averageTime);
             }
-            //更新爬取检查状态参数
-            Helper.isFirstCrawl = false;
-            isDesided = false;
-            Helper.isFirstPaperLink = true;
             return isSucceed;
         } catch (SQLException e) {
             e.printStackTrace();

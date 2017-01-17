@@ -1,12 +1,18 @@
 package com.weapes.ntpaprseng.crawler.extract;
 
+import com.weapes.ntpaprseng.crawler.store.DataSource;
 import com.weapes.ntpaprseng.crawler.store.Paper;
 import com.weapes.ntpaprseng.crawler.store.Storable;
+import com.weapes.ntpaprseng.crawler.util.Helper;
+import com.zaxxer.hikari.HikariDataSource;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,6 +55,9 @@ public class PaperWebPage extends WebPage {
     private static final int VOLUM_TEXT_OFFSET = 7;
     private static final int ISSUE_TEXT_OFFSET = 6;
 
+    private static final String LAST_URL_UPDATE_SQL =
+            "UPDATE HELPER SET "+" last_url = ? "+ "WHERE id = 1";
+
     public PaperWebPage(final String text, final String url) {
         super(text, url);
     }
@@ -56,10 +65,26 @@ public class PaperWebPage extends WebPage {
     @Override
     public Storable extract() {
 
-        System.out.println("Webpage extracting: page_url=" + getUrl() + " type = PaperWebPage");
+        System.out.println("提取页面信息: page_url=" + getUrl() + " type = PaperWebPage");
 
+        if (Helper.isFirstUrl) {//如果是第一篇论文，则更新论文链接到表HELPER中的last_url字段
+            boolean isSucceed = false;
+            final HikariDataSource mysqlDataSource = DataSource.getMysqlDataSource();
+            try (final Connection connection = mysqlDataSource.getConnection()){
+                try (final PreparedStatement preparedStatement = connection.prepareStatement(LAST_URL_UPDATE_SQL)) {
+                    preparedStatement.setString(1, getUrl());
+                    isSucceed = preparedStatement.executeUpdate() != 0;
+                }catch (SQLException e){
+                    e.printStackTrace();
+                }
+            }catch (SQLException e){
+                e.printStackTrace();
+            }
+            if (isSucceed) {//成功之后就更改isFirstUrl为false 即后面的论文都不是第一篇了
+                Helper.isFirstUrl = false;
+            }
+        }
         final Document dom = Jsoup.parse(getText());
-
         return new Paper(
                 getUrl(),
                 parseAuthors(dom),

@@ -30,12 +30,9 @@ public class DBLog {
                     "UpdateTime)" + "VALUES(?, ?, ?, ?, ?)";
     private static final String UPDATE_LOG =
             "INSERT INTO UpdateLog(" +
-                    "CrawlTime,"+"SuccessfulNumber,"+"FailedNumber"+ "TotalNumber)"+
-                    "VALUES(?, ?, ?, ?)";
-    private static final String CRAWL_AVERAGE_TIME_LOG="UPDATE CrawlLog SET " +
-            "AverageTime = ?"+ " WHERE TotalNumber = ";
-    private static final String UPDATE_AVERAGE_TIME_LOG="UPDATE UpdateLog SET " +
-            "AverageTime = ?"+ " WHERE TotalNumber = ";
+                    "UpdateTime,"+"SuccessfulNumber,"+"FailedNumber,"+ "TotalNumber,"+ "AverageTime)"+
+                    "VALUES(?, ?, ?, ?,?)";
+
 
     public static void saveCrawlDetailLog(String url, int currentPosition, int totalNumber, boolean isSuccessful,String crawlTime) {
         final HikariDataSource mysqlDataSource =
@@ -113,7 +110,7 @@ public class DBLog {
             e.printStackTrace();
         }
     }
-    public static void saveFinalUpdateLog(String updateTime,int successfulNumber,int failedNumber, int totalNumber) {
+    public static void saveFinalUpdateLog(String updateTime,int successfulNumber,int failedNumber, int totalNumber,String averageTime) {
         final HikariDataSource mysqlDataSource =
                 DataSource.getMysqlDataSource();
         // 从DB连接池得到连接
@@ -125,6 +122,7 @@ public class DBLog {
                 preparedStatement.setInt(2, successfulNumber);
                 preparedStatement.setInt(3, failedNumber);
                 preparedStatement.setInt(4, totalNumber);
+                preparedStatement.setString(5, averageTime);
                 if (preparedStatement.executeUpdate() != 0) {
                     LOGGER.info("更新过程的总体情况日志保存成功");
                 } else {

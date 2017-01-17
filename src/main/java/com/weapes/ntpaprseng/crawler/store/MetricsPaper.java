@@ -207,10 +207,11 @@ public class MetricsPaper implements Storable{
                         DetailCrawler.getUpdateTime());
 
                 if (getCurrentUpdateNumbers().get() == getUpdateTotalNumbers().get()) {
-                    Helper.setIsUpdateFinished(true);
+                    Helper.isUpdateFinished = true;
                     LOGGER.info("更新完成，本次更新相关指标论文总量：" +getUpdateTotalNumbers().get()
                             + " 成功数：" + getUpdateSucceedNumbers().get()
                             + " 失败数：" + getUpdateFailedNumbers());
+                    Log.resetCurrentUpdateNumbers();
                     long startTime= DetailCrawler.getUpdateMillisecond();//开始更新的时间
                     long endTime=System.currentTimeMillis();//结束更新的时间
                     long total=endTime-startTime;
