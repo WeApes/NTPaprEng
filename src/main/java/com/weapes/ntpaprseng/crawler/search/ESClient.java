@@ -23,7 +23,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  * Created by 不一样的天空 on 2016/11/2.
  */
 public class ESClient {
-    private static final String IP = "127.0.0.1";
+    private static final String IP = "172.29.108.32";
     private static final int PORT = 9300;
     private static final int NT_PAPER_SIZE=14;
     private static final int REF_DATA_SIZE=21;

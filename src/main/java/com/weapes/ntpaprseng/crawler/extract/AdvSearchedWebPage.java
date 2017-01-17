@@ -13,9 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.weapes.ntpaprseng.crawler.util.Helper.isDesided;
-import static com.weapes.ntpaprseng.crawler.util.Helper.isURL;
-
 /**
  * Created by lawrence on 16/8/8.
  */
@@ -43,7 +40,7 @@ public class AdvSearchedWebPage extends WebPage {
 
     @Override
     public List<? extends Link> extractAll() {
-        System.out.println("Links parsing: url=" + getUrl() + " type=AdvSearched");
+        System.out.println("链接解析: url=" + getUrl() + " type=AdvSearched");
 
         final Document dom = Jsoup.parse(getText());
 
@@ -57,33 +54,31 @@ public class AdvSearchedWebPage extends WebPage {
         // 得到目前页面论文链接
         final List<? extends Link> paperLinks =
                 getPaperLinks(parsePaperLinks(dom));
-
         allLinks.addAll(paperLinks);
 
         return allLinks;
     }
     private final boolean isPaperLinksToBeCrawled(final String url) {
-        // 利用Helper中的静态变量或数据库中上一次爬取的最后一条论文详细页面url（备用）
-        // 来确定更新的数量，检查范围是本次爬取的所论文，当匹配到上次爬取的末位置就检查完毕
+        // 利用上次爬取的最后一篇论文链接来遍历对比本次爬取一定范围内的所有链接，
+        // 来确定本次需要爬取得论文链接，当匹配到上次爬取最后一篇论文链接则说明后面的就是上次已经爬取过的，即检查完毕
         String lastUrlForLastTime = Helper.lastUrlForLastTime;
-        if (lastUrlForLastTime == null) {//使用备用方法
-            lastUrlForLastTime = Helper.getLastUrlForLastTime();
-        }
-        if (url.equals(lastUrlForLastTime)) {// 匹配到
-            isDesided = true; //检查完毕，flag置位
-            return false;
-        } else if (!isDesided) { // 未匹配到且没有检查完毕
-            if (Helper.isFirstPaperLink) {
-                Helper.lastUrlForLastTime = url;
-                Helper.isFirstPaperLink = false;
-            }
+        if (lastUrlForLastTime == null || lastUrlForLastTime.equals("")){
             Log.getUrlNumbers().addAndGet(1);
             return true;
         }
+
+        if (url.equals(lastUrlForLastTime)) {// 匹配到
+            Helper.isQueryFinished = true; //检查完毕
+            return false; //上次已经爬过，不用再爬
+        } else if (!Helper.isQueryFinished) { // 未匹配到且没有检查完毕，则说明是本次待爬取得论文
+            Log.getUrlNumbers().addAndGet(1);
+            return true;
+        }
+        //没匹配到且检查完毕，说明是上次爬取过的非最后一篇论文，本次不再爬
         return false;
     }
 
-    // 得到其他AdvSearched链接
+    // 得到其他AdvSearched页面链接
     private List<Link> getSiblingLinks(final Document dom) {
         List<Link> siblingLinks = new ArrayList<>();
         for (int i = 2; i <= parsePageNum(dom); i++) {
@@ -92,13 +87,12 @@ public class AdvSearchedWebPage extends WebPage {
         return siblingLinks;
     }
 
-    // 得到论文链接
+    // 得到当前AdvSearched页面论文链接
     private List<? extends Link> getPaperLinks(final Elements paperLinks) {
         return paperLinks.stream()
                 .map(link -> new PaperLink(link.attr("href")))
-                .filter(paper -> isURL(paper.getUrl())).filter(paper -> isPaperLinksToBeCrawled(paper.getUrl()))
+                .filter(paper -> Helper.isURL(paper.getUrl())).filter(paper -> isPaperLinksToBeCrawled(paper.getUrl()))
                 .collect(Collectors.toList());
-
     }
 
     // 通过URL判断是否是第一个AdvSearched

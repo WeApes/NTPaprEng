@@ -35,10 +35,10 @@ import static java.nio.charset.Charset.forName;
  * Created by lawrence on 16/8/7.
  */
 public final class Helper {
-    public static boolean isFirstCrawl = true;
-    public static boolean isDesided = false;
-    public static boolean isFirstPaperLink = true;
-    public static String lastUrlForLastTime = null;
+//    public static boolean isFirstCrawl = true;
+    public static boolean isQueryFinished = false; //遍历寻找上次爬取的最后一篇论文完成的标记
+    public static boolean isFirstUrl = true; //本次爬取第一篇论文的标记
+    public static String lastUrlForLastTime = null; //上次爬取最后一篇论文
     public static boolean isCrawlFinished = false;
     public static boolean isUpdateFinished = false;
     private static final OkHttpClient OK_HTTP_CLIENT =
@@ -185,19 +185,20 @@ public final class Helper {
         int begin, end;
         begin = range.getInteger("begin");
         end = range.getInteger("end");
-        if (!Helper.isFirstCrawl) {
-            Calendar nowDate = Calendar.getInstance();
-            int year = nowDate.YEAR;
-            int month = nowDate.MONTH;
-            if (month >= 2) {
-                begin = year;
-                end = year;
-            }
-            else {
-                begin = year - 1;
-                end = year;
-            }
-        }
+//        if (1==1) {//?????????????????????????????????????????????
+//            Calendar nowDate = Calendar.getInstance();
+//            int year = nowDate.YEAR;
+//            int month = nowDate.MONTH;
+//            if (month >= 1) {
+//                begin = year;
+//                end = year;
+//                System.out.print(year + "%%%%%%%%%%%%%%%%%");
+//            }
+//            else {
+//                begin = year - 1;
+//                end = year;
+//            }
+//        }
         // 如果只搜索特点年份,则URL的data_range参数应只有一个年份。
         String dateRange;
         if (begin == end)
@@ -218,7 +219,7 @@ public final class Helper {
         final HikariDataSource mysqlDataSource = DataSource.getMysqlDataSource();
         //从第二张数据表中取出已有所有论文相关指标页面链接
         try (final Connection connection = mysqlDataSource.getConnection()) {
-            try (final PreparedStatement preparedStatement = connection.prepareStatement("SELECT URL FROM REF_DATA")) {
+            try (final PreparedStatement preparedStatement = connection.prepareStatement("SELECT DISTINCT URL FROM REF_DATA")) {
                 try (ResultSet results = preparedStatement.executeQuery()) {
                     while (results.next()) {
                         final String url = results.getString("URL");
@@ -238,7 +239,7 @@ public final class Helper {
         final HikariDataSource mysqlDataSource = DataSource.getMysqlDataSource();
         try (final Connection connection = mysqlDataSource.getConnection()) {
             try (final Statement statement = connection.createStatement()) {
-                try (ResultSet results =statement.executeQuery("select count(*) as rowCount from REF_DATA")) {
+                try (ResultSet results =statement.executeQuery("select count(DISTINCT URL) as rowCount from REF_DATA")) {
                     results.next();
                     num = results.getInt("rowCount");
                 }
@@ -249,23 +250,21 @@ public final class Helper {
         return num;
     }
 
-    //在意外终止爬虫后重启时获取上次爬取的最后一篇论文链接的备用方法
-    public static String getLastUrlForLastTime() {
-        String urlForLastTime = null;
+    //初始化上次爬取第一篇论文链接
+    public static void initLastUrlForLastTime() {
         final HikariDataSource mysqlDataSource = DataSource.getMysqlDataSource();
-        //从第二张数据表中取出已有所有论文相关指标页面链接
+        //从HELPER数据表中取出
         try (final Connection connection = mysqlDataSource.getConnection()) {
-            try (final PreparedStatement preparedStatement = connection.prepareStatement("SELECT URL FROM NT_PAPERS LIMIT 1")) {
+            try (final PreparedStatement preparedStatement = connection.prepareStatement("SELECT last_url FROM HELPER LIMIT 1")) {
                 try (ResultSet results = preparedStatement.executeQuery()) {
                     while (results.next()) {
-                        urlForLastTime = results.getString("URL");
+                        lastUrlForLastTime = results.getString("last_url");
                     }
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return urlForLastTime;
     }
 
     public static String getCrawlTime() {
@@ -308,19 +307,4 @@ public final class Helper {
         return jsonObject.getJSONObject("interval").getInteger("task_period");
     }
 
-    public static boolean isCrawlFinished() {
-        return isCrawlFinished;
-    }
-
-    public static void setIsCrawlFinished(boolean isCrawlFinished) {
-        Helper.isCrawlFinished = isCrawlFinished;
-    }
-
-    public static boolean isUpdateFinished() {
-        return isUpdateFinished;
-    }
-
-    public static void setIsUpdateFinished(boolean isUpdateFinished) {
-        Helper.isUpdateFinished = isUpdateFinished;
-    }
 }

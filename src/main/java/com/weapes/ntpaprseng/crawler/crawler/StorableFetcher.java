@@ -4,11 +4,14 @@ import com.weapes.ntpaprseng.crawler.extract.Extractable;
 import com.weapes.ntpaprseng.crawler.extract.ExtractedObject;
 import com.weapes.ntpaprseng.crawler.follow.Followable;
 import com.weapes.ntpaprseng.crawler.follow.Link;
+import com.weapes.ntpaprseng.crawler.log.Log;
 import com.weapes.ntpaprseng.crawler.store.Storable;
 import com.weapes.ntpaprseng.crawler.util.Helper;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
+
 
 /**
  * Created by lawrence on 16/8/8.
@@ -38,9 +41,14 @@ class StorableFetcher<F extends Followable> implements Runnable {
             if (!extractable.isMulti()) {
                 dispatch(extractable.extract());
             } else {
-                extractable
-                        .extractAll()
-                        .forEach(this::dispatch);
+                List<? extends ExtractedObject> extractedObjectsList = extractable.extractAll();
+                if (extractedObjectsList.size() == 0){//没有待爬取论文
+                    Helper.isCrawlFinished = true;
+                    System.out.println("本次爬取论文" + Log.getUrlNumbers().get() + "篇。");
+                    System.out.println("爬取结束。");
+                }
+
+                extractedObjectsList.forEach(this::dispatch);
             }
         } catch (IOException e) {
             e.printStackTrace();

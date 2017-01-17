@@ -33,6 +33,7 @@ public class DetailCrawler implements Crawler {
     public void crawl() {
         startTime=Helper.getCrawlTime();
         startMillisecond=System.currentTimeMillis();
+
         System.out.print("开始更新指标。系统时间： " + startTime + "\n");
         System.out.print("本次待更新指标的论文总量为： " + Helper.getRefDataNum() + "\n");
         Log.getUpdateTotalNumbers().set(Helper.getRefDataNum());
