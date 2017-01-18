@@ -304,6 +304,8 @@ public final class Helper {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        System.out.println(jsonObject.getJSONObject("interval").getInteger("task_period"));
+
         return jsonObject.getJSONObject("interval").getInteger("task_period");
     }
 
