@@ -1,6 +1,5 @@
 package com.weapes.ntpaprseng.crawler.store;
 
-import com.weapes.ntpaprseng.crawler.follow.PaperLink;
 import com.weapes.ntpaprseng.crawler.log.DBLog;
 import com.weapes.ntpaprseng.crawler.log.Log;
 import com.weapes.ntpaprseng.crawler.search.ESClient;
@@ -53,6 +52,9 @@ public class Paper implements Storable {
     private final String affiliation;
     private final String publishTime;
     private final String crawlTime;
+
+    private static long startMillisecond;
+    private static String startTime;
 
     public Paper(final String url,
                  final List<String> authors,
@@ -142,7 +144,19 @@ public class Paper implements Storable {
 
     @Override
     public boolean store() {
-        System.out.println("Store begin: type=Paper");
+        LOGGER.info("本次爬取论文" + Log.getUrlNumbers().get() + "篇，"
+                + "正在爬取第" + Log.getCrawlingNumbers().incrementAndGet() + "篇\n"
+                + "链接为：" + getUrl());
+        if (Log.getCrawlingNumbers().get() == 1){//如果是第一篇，则记录开始时刻和爬取日期
+            startMillisecond=System.currentTimeMillis();
+            startTime=Helper.getCrawlTime();
+        }
+        if (Log.getUrlNumbers().get() == Log.getCrawlingNumbers().get()) { //记录最后一篇论文链接
+            Log.setLastLink(getUrl());
+        }
+
+
+        System.out.println("保存爬取的数据: type=Paper");
         final HikariDataSource mysqlDataSource =
                 DataSource.getMysqlDataSource();
 
@@ -153,46 +167,61 @@ public class Paper implements Storable {
                 final PreparedStatement paperPreparedStatement =
                         connection.prepareStatement(NT_PAPERS_INSERT_SQL);
                 bindPaperSQL(paperPreparedStatement);
-                System.out.println("sql exeing");
+                System.out.println("执行保存数据的sql语句");
                 // 判断爬取论文信息操作是否成功
-                paperPreparedStatement.executeUpdate();
+                isSucceed = paperPreparedStatement.executeUpdate() != 0;
             } catch (SQLException e) {
                 System.out.print(e.getSQLState() + "  " + e.getMessage());
             }
-            isSucceed = putNTPaperIntoES();//保存论文信息到ES中
-            if (!isSucceed) {
-                System.out.println("保存论文信息到ElasticSearch中的NT_PAPER失败");
-            }
-            try {
+
+//            isSucceed = putNTPaperIntoES();//保存论文信息到ES中
+//            if (!isSucceed) {
+//                System.out.println("保存论文信息到ElasticSearch中的NT_PAPER失败");
+//            }
+
+            try {//保存论文URL到REF_DATA
                 final PreparedStatement refPreparedStatement =
                         connection.prepareStatement(REF_INSERT_SQL);
                 bindRefSQL(refPreparedStatement);
-                System.out.println("store metrix url to REF_DATA");
+                System.out.println("保存论文URL到REF_DATA");
                 refPreparedStatement.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-          if (isSucceed) {
-                LOGGER.info("当前共有" + getCrawlingSucceedNumbers().incrementAndGet() + "篇爬取成功...\n"
-                        + "链接为；" + getUrl());
+
+            if (isSucceed) {
+                LOGGER.info("当前共有" + getCrawlingSucceedNumbers().incrementAndGet() + "篇爬取成功..."
+                        + "url=" + getUrl());
             } else {
-                LOGGER.info("当前共有" + getCrawlingFailedNumber().incrementAndGet() + "篇爬取失败...\n"
-                        + "链接为；" + getUrl());
+                LOGGER.info("当前共有" + getCrawlingFailedNumber().incrementAndGet() + "篇爬取失败..."
+                        + "url=" + getUrl());
             }
-            DBLog.saveCrawlDetailLog(getUrl(), Log.getCrawlingNumbers().get(),Log.getUrlNumbers().get(),isSucceed,Helper.getCrawlTime());
-            if (getLastLink().equals(getUrl())) { //爬取完成还要更改isFirstUrl为true，下次爬取可以利用
-                Helper.isFirstUrl = true;
-                Helper.isCrawlFinished = true;
+
+            //保存论文爬取详细日志
+            DBLog.saveCrawlDetailLog(getUrl(),
+                    Log.getCrawlingNumbers().get(),
+                    Log.getUrlNumbers().get(),
+                    isSucceed,
+                    Helper.getCrawlTime());
+
+            //爬取完成，打印、保存日志和更新爬取任务状态
+            if (getLastLink().equals(getUrl())) {
                 LOGGER.info("爬取完成，本次爬取论文总量：" + getUrlNumbers().get()
                         + " 成功数：" + getCrawlingSucceedNumbers().get()
                         + " 失败数：" + getCrawlingFailedNumber().get());
-                getUrlNumbers().set(0); //重置
-                long startTime = PaperLink.getStartMillisecond();//开始爬取的时间
+
                 long endTime = System.currentTimeMillis();//结束爬取的时间
-                String averageTime = Helper.getSeconds((endTime - startTime) / getUrlNumbers().get());
-                //保存爬取完成的总体情况数据到数据库中
-                DBLog.saveFinalCrawlLog(PaperLink.getStartTime(),getCrawlingSucceedNumbers().get(),
-                        getCrawlingFailedNumber().get(),getUrlNumbers().get(),averageTime);
+                String averageTime = Helper.getSeconds((endTime - startMillisecond) / getUrlNumbers().get());
+                //保存爬取完成的总体情况日志到数据库中
+                DBLog.saveFinalCrawlLog(startTime, getCrawlingSucceedNumbers().get(),
+                        getCrawlingFailedNumber().get(), getUrlNumbers().get(), averageTime);
+
+                Helper.isFirstUrl = true; //下次任务开始时有第一条论文url
+                Helper.isCrawlFinished = true; //爬取任务结束
+                getCrawlingSucceedNumbers().set(0);
+                getCrawlingFailedNumber().set(0);
+                Log.getCrawlingNumbers().set(0);
+                getUrlNumbers().set(0); //重置爬取论文总量
             }
             return isSucceed;
         } catch (SQLException e) {
@@ -203,7 +232,6 @@ public class Paper implements Storable {
 
     private void bindPaperSQL(final PreparedStatement preparedStatement)
             throws SQLException {
-        // 填坑
         preparedStatement.setString(1, getTitle());
         preparedStatement.setString(2, String.join(",", getAuthors()));
         preparedStatement.setString(3, getSourceTitle());
