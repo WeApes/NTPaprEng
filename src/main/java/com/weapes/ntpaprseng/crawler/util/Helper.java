@@ -35,13 +35,18 @@ import static java.nio.charset.Charset.forName;
  * Created by lawrence on 16/8/7.
  */
 public final class Helper {
-//    public static boolean isFirstCrawl = true;
     public static boolean isQueryFinished = false; //遍历寻找上次爬取的最后一篇论文完成的标记
     public static boolean isFirstUrl = true; //本次爬取第一篇论文的标记
-    public static String lastUrlForLastTime = null; //上次爬取最后一篇论文
-    public static boolean isCrawlFinished = false;
-    public static boolean isUpdateFinished = false;
-    public static int advSearchLinkNum = 0; //高级检索后的页面数
+    public static String lastUrlForLastTime; //上次爬取最后一篇论文
+    public static boolean isCrawlFinished = false;//是否爬取成功
+    public static boolean isUpdateFinished = false;//是否更新成功
+    public static int advSearchLinkNum; //高级检索后的页面数
+    public static long crawlStartTime;//爬取开始时刻
+    public static String crawlStartDate;//爬取开始日期
+    public static long updateStartTime;//更新开始时刻
+    public static String updateStartDate;//更新开始日期
+    public static boolean firstInsertCrawlDetailLog = true;//首次插入CrawlDetailLog
+    public static boolean firstInsertUpdateDetailLog = true;//首次插入UpdateDetailLog
     private static final OkHttpClient OK_HTTP_CLIENT =
             new OkHttpClient.Builder()
                     .readTimeout(1, TimeUnit.MINUTES)
@@ -129,7 +134,6 @@ public final class Helper {
      */
     public static String fetchWebPage(final String url)
             throws IOException {
-
         final Request request = new Request.Builder()
                 .url(url)
                 .addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36")
@@ -247,11 +251,12 @@ public final class Helper {
             }
         } catch (SQLException e) {
             System.out.println("Connected DB Failed");
+            e.printStackTrace();
         }
         return num;
     }
 
-    //初始化上次爬取第一篇论文链接
+    //初始化上次爬取最后一篇论文链接
     public static void initLastUrlForLastTime() {
         final HikariDataSource mysqlDataSource = DataSource.getMysqlDataSource();
         //从HELPER数据表中取出
@@ -274,6 +279,7 @@ public final class Helper {
         String time=simpleDateFormat.format(now);
         return time;
     }
+
     public static String getUpdateTime() {
         final Date now = new Date();
         SimpleDateFormat simpleDateFormat=new SimpleDateFormat(UPDATE_TIME_FORMAT);

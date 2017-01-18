@@ -1,13 +1,5 @@
 package com.weapes.ntpaprseng.crawler.search;
 
-//import org.elasticsearch.client.transport.TransportClient;
-//import org.elasticsearch.common.settings.Settings;
-//import org.elasticsearch.common.transport.InetSocketTransportAddress;
-//import org.elasticsearch.transport.client.PreBuiltTransportClient;
-//
-//import java.net.InetAddress;
-//import java.net.UnknownHostException;
-
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -62,9 +54,9 @@ public class ESClient {
                 .get();
         return response.isCreated();
     }
-    public   boolean putMetricsPaperIntoES(XContentBuilder json) {
 
-        IndexResponse response = client.prepareIndex(INDEX,REF_DATA_TYPE)
+    public boolean putMetricsPaperIntoES(XContentBuilder json) {
+        IndexResponse response = client.prepareIndex(INDEX, REF_DATA_TYPE)
                 .setSource(json)
                 .get();
         return response.isCreated();

@@ -1,6 +1,5 @@
 package com.weapes.ntpaprseng.crawler.store;
 
-import com.weapes.ntpaprseng.crawler.crawler.DetailCrawler;
 import com.weapes.ntpaprseng.crawler.log.DBLog;
 import com.weapes.ntpaprseng.crawler.log.Log;
 import com.weapes.ntpaprseng.crawler.search.ESClient;
@@ -18,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import static com.weapes.ntpaprseng.crawler.log.Log.*;
+import static com.weapes.ntpaprseng.crawler.util.Helper.firstInsertUpdateDetailLog;
 import static com.weapes.ntpaprseng.crawler.util.Helper.getLogger;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -29,8 +29,6 @@ public class MetricsPaper implements Storable{
 
     private static final Logger LOGGER =
             getLogger(Paper.class);
-    //更新REF_DATA表的sql语句
-    private String REF_UPDATE_SQL = SQLHelper.getRefUpdateSQL();
 
     private final String url;
     private final int pageViews;
@@ -177,48 +175,61 @@ public class MetricsPaper implements Storable{
 
     @Override
     public boolean store() {
-        System.out.println("Store begin: type = MetricsPaper.");
         LOGGER.info("本次更新论文" + Log.getUpdateTotalNumbers().get() + "篇，"
                 + "正在更新第" + Log.getCurrentUpdateNumbers().incrementAndGet() + "篇\n"
                 + "链接为：" + getUrl());
+
+        System.out.println("保存爬取的数据: type = MetricsPaper.");
         final HikariDataSource mysqlDataSource = DataSource.getMysqlDataSource();
-        // 加上选择条件 URL
-        REF_UPDATE_SQL =SQLHelper.getRefInsertSQL();
         try (final Connection connection = mysqlDataSource.getConnection()){
-            try (final PreparedStatement preparedStatement = connection.prepareStatement(REF_UPDATE_SQL)) {
+            try (final PreparedStatement preparedStatement = connection.prepareStatement(SQLHelper.getRefInsertSQL())) {
                 bindUpdateSql(preparedStatement);
                 // 判断执行是否成功
                 boolean succeed = preparedStatement.executeUpdate() != 0;
                 if (succeed) {
-                    LOGGER.info("当前共有" + getUpdateSucceedNumbers().incrementAndGet() + "篇论文相关指标更新成功...\n"
-                            + "链接为；" + getUrl());
+                    LOGGER.info("当前共有" + getUpdateSucceedNumbers().incrementAndGet() + "篇论文相关指标更新成功..."
+                            + "链接为:" + getUrl());
                 }else {
-                    LOGGER.info("当前共有" + getUpdateFailedNumbers().incrementAndGet() + "篇论文相关指标更新失败...\n"
-                            + "链接为；" + getUrl());
+                    LOGGER.info("当前共有" + getUpdateFailedNumbers().incrementAndGet() + "篇论文相关指标更新失败..."
+                            + "链接为:" + getUrl());
                 }
-                boolean isSuccess= updateRefDataIntoES();//更新论文指标到ElasticSearch中的REF_DATA
-                if (!isSuccess){
-                    LOGGER.info("更新论文指标到ElasticSearch中的REF_DATA失败");
-                }else {
-                    LOGGER.info("更新论文指标到ElasticSearch中的REF_DATA成功");
-                }
-                //保存更新的具体数据到数据库中
-                DBLog.saveUpdateDetailLog(getUrl(),getCurrentUpdateNumbers().get(),getUpdateTotalNumbers().get(),succeed,
-                        DetailCrawler.getUpdateTime());
+//                boolean isSuccess= updateRefDataIntoES();//更新论文指标到ElasticSearch中的REF_DATA
+//                if (!isSuccess){
+//                    LOGGER.info("更新论文指标到ElasticSearch中的REF_DATA失败");
+//                }else {
+//                    LOGGER.info("更新论文指标到ElasticSearch中的REF_DATA成功");
+//                }
+                //保存更新的具体日志数据到数据库中
+                DBLog.saveUpdateDetailLog(getUrl(),
+                        getCurrentUpdateNumbers().get(),
+                        getUpdateTotalNumbers().get(),
+                        succeed,
+                        Helper.updateStartDate
+                        );
 
+                //更新完成，打印、保存日志和更新任务状态
                 if (getCurrentUpdateNumbers().get() == getUpdateTotalNumbers().get()) {
-                    Helper.isUpdateFinished = true;
-                    LOGGER.info("更新完成，本次更新相关指标论文总量：" +getUpdateTotalNumbers().get()
+                    LOGGER.info("更新完成，本次更新相关指标论文总量：" + getUpdateTotalNumbers().get()
                             + " 成功数：" + getUpdateSucceedNumbers().get()
                             + " 失败数：" + getUpdateFailedNumbers());
-                    Log.getCurrentUpdateNumbers().set(0);
-                    long startTime= DetailCrawler.getUpdateMillisecond();//开始更新的时间
-                    long endTime=System.currentTimeMillis();//结束更新的时间
-                    long total=endTime-startTime;
-                    String averageTime=Helper.getSeconds(total/getUrlNumbers().get());
+
+                    long startTime= Helper.updateStartTime;  //开始更新的时间
+                    long endTime=System.currentTimeMillis();//更新结束的时间
+                    String averageTime=Helper.getSeconds((endTime-startTime) / getUpdateTotalNumbers().get());
                     //保存更新完成后的总体情况数据到数据库中
-                    DBLog.saveFinalUpdateLog(DetailCrawler.getUpdateTime(),getUpdateSucceedNumbers().get(),
-                            getUpdateFailedNumbers().get(),getUpdateTotalNumbers().get(),averageTime);
+                    DBLog.saveFinalUpdateLog(
+                            Helper.updateStartDate,
+                            getUpdateSucceedNumbers().get(),
+                            getUpdateFailedNumbers().get(),
+                            getUpdateTotalNumbers().get(),
+                            averageTime);
+
+                    getUpdateSucceedNumbers().set(0);
+                    getUpdateFailedNumbers().set(0);
+                    Log.getCurrentUpdateNumbers().set(0);
+                    getCurrentUpdateNumbers().set(0);
+                    firstInsertUpdateDetailLog = true;
+                    Helper.isUpdateFinished = true;
                 }
                 return succeed;
             }catch (SQLException e){
@@ -259,11 +270,11 @@ public class MetricsPaper implements Storable{
     public boolean updateRefDataIntoES(){
         XContentBuilder json=null;
         FormatHelper formatHelper=new FormatHelper();
-        TimeFormatter formatter=formatHelper.formatUpdateTime(DetailCrawler.getUpdateTime());
+        TimeFormatter formatter=formatHelper.formatUpdateTime(Helper.updateStartDate);
         try {
             json=jsonBuilder().startObject()
                     .field("URL",getUrl())
-                    .field("UpdateTime", DetailCrawler.getUpdateTime())
+                    .field("UpdateTime", Helper.updateStartDate)
                     .field("Year", formatter.getYear())
                     .field("Month", formatter.getMonth())
                     .field("Day", formatter.getDay())

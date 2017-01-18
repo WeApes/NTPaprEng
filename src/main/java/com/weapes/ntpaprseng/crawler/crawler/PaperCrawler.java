@@ -29,7 +29,9 @@ class PaperCrawler implements Crawler {
 
     @Override
     public void crawl() {
-        System.out.print("开始爬取。系统时间：" + Helper.getCrawlTime() + "\n");
+        Helper.crawlStartDate = Helper.getCrawlTime();
+        Helper.crawlStartTime = System.currentTimeMillis();
+        System.out.print("开始爬取论文信息。系统时间：" + Helper.crawlStartDate + "\n");
 
         // 获取上次爬取的最后一篇论文URL
         Helper.initLastUrlForLastTime();

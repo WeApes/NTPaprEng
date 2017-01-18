@@ -58,7 +58,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
 
         final Set<Map.Entry<String,Integer>> entries = hashMap.entrySet();
-        return new MetricsPaper(
+        MetricsPaper metricsPaper = new MetricsPaper(
                 getUrl(),
                 parsePageViews(doc),
                 parseWebOfScience(entries),
@@ -80,11 +80,15 @@ public class NatureMetricsWebPage extends WebPage {
                 parseLinkedin(entries),
                 parseQ_A(entries)
         );
+        return metricsPaper;
     }
 
     private int parsePageViews(final Document doc){
-        return Integer.parseInt(doc.select(PageViews).text().replace(",",""));
+        if (!doc.toString().contains("page-view-header")) //如果没有PageViews
+            return 0;
+        return Integer.parseInt(doc.select(PageViews).text().replace(",", ""));
     }
+
     private int parseWebOfScience(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -96,6 +100,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseCrossRef(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -107,6 +112,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseScopus(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -118,6 +124,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseNewsOutlets(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -129,6 +136,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseReddit(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -140,6 +148,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseBlog(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -151,6 +160,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseTweet(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -162,6 +172,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseFacebook(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -173,6 +184,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseGoogle(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -184,6 +196,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parsePinterest(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -198,6 +211,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseWikipedia(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -209,6 +223,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseMendeley(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -220,6 +235,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseCiteUlink(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -231,6 +247,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseZotero(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -242,6 +259,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseF1000(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -253,6 +271,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseVideo(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -267,6 +286,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseLinkedin(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -281,6 +301,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     private int parseQ_A(final Set<Map.Entry<String,Integer>> entries){
         for (Map.Entry<String, Integer> entry : entries) {
             String key = entry.getKey();
@@ -295,6 +316,7 @@ public class NatureMetricsWebPage extends WebPage {
         }
         return 0;
     }
+
     @Override
     public List<? extends ExtractedObject> extractAll() {
         return null;
