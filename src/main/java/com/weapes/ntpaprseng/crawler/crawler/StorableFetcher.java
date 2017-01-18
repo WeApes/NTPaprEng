@@ -40,10 +40,11 @@ class StorableFetcher<F extends Followable> implements Runnable {
     @Override
     public void run() {
         try {
-            final Extractable extractable = seed.follow(); // 对高级检索后链接或论文链接follow
-            if (!extractable.isMulti()) { //如果是论文链接
+            // 对高级检索后链接或论文链接、论文指标链接follow得到页面
+            final Extractable extractable = seed.follow();
+            if (!extractable.isMulti()) { //如果是论文信息页面或论文指标页面
                 dispatch(extractable.extract());
-            } else {//如果是高级检索后链接
+            } else {//如果是高级检索后论文入口页面
                 List<? extends ExtractedObject> extractedObjectsList = extractable.extractAll();
                 if (extractedObjectsList.size() == 0){//没有新刊登的待爬取论文
                     Helper.isFirstUrl = true; //下次任务开始时有第一条论文url

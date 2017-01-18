@@ -53,9 +53,6 @@ public class Paper implements Storable {
     private final String publishTime;
     private final String crawlTime;
 
-    private static long startMillisecond;
-    private static String startTime;
-
     public Paper(final String url,
                  final List<String> authors,
                  final String title,
@@ -147,10 +144,7 @@ public class Paper implements Storable {
         LOGGER.info("本次爬取论文" + Log.getUrlNumbers().get() + "篇，"
                 + "正在爬取第" + Log.getCrawlingNumbers().incrementAndGet() + "篇\n"
                 + "链接为：" + getUrl());
-        if (Log.getCrawlingNumbers().get() == 1){//如果是第一篇，则记录开始时刻和爬取日期
-            startMillisecond=System.currentTimeMillis();
-            startTime=Helper.getCrawlTime();
-        }
+
         if (Log.getUrlNumbers().get() == Log.getCrawlingNumbers().get()) { //记录最后一篇论文链接
             Log.setLastLink(getUrl());
         }
@@ -179,7 +173,7 @@ public class Paper implements Storable {
 //                System.out.println("保存论文信息到ElasticSearch中的NT_PAPER失败");
 //            }
 
-            try {//保存论文URL到REF_DATA
+            try {//初始化REF_DATA
                 final PreparedStatement refPreparedStatement =
                         connection.prepareStatement(REF_INSERT_SQL);
                 bindRefSQL(refPreparedStatement);
@@ -204,16 +198,16 @@ public class Paper implements Storable {
                     isSucceed,
                     Helper.getCrawlTime());
 
-            //爬取完成，打印、保存日志和更新爬取任务状态
+            //爬取完成，打印、保存日志和更新任务状态
             if (getLastLink().equals(getUrl())) {
                 LOGGER.info("爬取完成，本次爬取论文总量：" + getUrlNumbers().get()
                         + " 成功数：" + getCrawlingSucceedNumbers().get()
                         + " 失败数：" + getCrawlingFailedNumber().get());
 
                 long endTime = System.currentTimeMillis();//结束爬取的时间
-                String averageTime = Helper.getSeconds((endTime - startMillisecond) / getUrlNumbers().get());
+                String averageTime = Helper.getSeconds((endTime - Helper.crawlStartTime) / getUrlNumbers().get());
                 //保存爬取完成的总体情况日志到数据库中
-                DBLog.saveFinalCrawlLog(startTime, getCrawlingSucceedNumbers().get(),
+                DBLog.saveFinalCrawlLog(Helper.crawlStartDate, getCrawlingSucceedNumbers().get(),
                         getCrawlingFailedNumber().get(), getUrlNumbers().get(), averageTime);
 
                 Helper.isFirstUrl = true; //下次任务开始时有第一条论文url
@@ -221,6 +215,7 @@ public class Paper implements Storable {
                 getCrawlingSucceedNumbers().set(0);
                 getCrawlingFailedNumber().set(0);
                 Log.getCrawlingNumbers().set(0);
+                Helper.firstInsertCrawlDetailLog = true;
                 getUrlNumbers().set(0); //重置爬取论文总量
             }
             return isSucceed;

@@ -16,14 +16,14 @@ public class Launcher {
             new PaperCrawler().crawl();
             while (!Helper.isCrawlFinished) Thread.sleep(2000);
             //更新
-//            new DetailCrawler().crawl();
-//            while (!Helper.isUpdateFinished) Thread.sleep(2000);
+            new DetailCrawler().crawl();
+            while (!Helper.isUpdateFinished) Thread.sleep(2000);
 
+            System.out.print("本次任务完成。\n");
             //爬取、更新状态重置 为下周期做准备
             Helper.isCrawlFinished = false;
-//            Helper.isUpdateFinished =false;
+            Helper.isUpdateFinished =false;
             //周期间歇
-
             TimeUnit.SECONDS.sleep(Helper.getTaskPeriod());
         }
     }
