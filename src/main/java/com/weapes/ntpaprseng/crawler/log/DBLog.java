@@ -59,7 +59,7 @@ public class DBLog {
             e.printStackTrace();
         }
     }
-    public static void saveFinalCrawlLog(String crawlTime,int successfulNumber,int failedNumber, int totalNumber,String average) {
+    public static void saveFinalCrawlLog(String crawlTime, int successfulNumber, int failedNumber, int totalNumber, String average) {
         final HikariDataSource mysqlDataSource =
                 DataSource.getMysqlDataSource();
         // 从DB连接池得到连接

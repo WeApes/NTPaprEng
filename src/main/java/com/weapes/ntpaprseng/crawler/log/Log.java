@@ -58,10 +58,6 @@ public class Log {
         return CURRENT_UPDATE_NUMBERS;
     }
 
-    public static void resetCurrentUpdateNumbers() {
-        CURRENT_UPDATE_NUMBERS.set(0);
-    }
-
     public static AtomicInteger getUpdateSucceedNumbers() {
         return UPDATE_SUCCEED_NUMBERS;
     }

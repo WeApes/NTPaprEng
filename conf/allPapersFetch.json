@@ -12,7 +12,7 @@
   ],
 
   "interval": {
-    "task_period": 2
+    "task_period": 10
   },
 
   "order": "date_desc"

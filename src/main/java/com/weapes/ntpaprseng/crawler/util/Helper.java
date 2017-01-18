@@ -41,6 +41,7 @@ public final class Helper {
     public static String lastUrlForLastTime = null; //上次爬取最后一篇论文
     public static boolean isCrawlFinished = false;
     public static boolean isUpdateFinished = false;
+    public static int advSearchLinkNum = 0; //高级检索后的页面数
     private static final OkHttpClient OK_HTTP_CLIENT =
             new OkHttpClient.Builder()
                     .readTimeout(1, TimeUnit.MINUTES)
@@ -279,11 +280,12 @@ public final class Helper {
         String time=simpleDateFormat.format(now);
         return time;
     }
+
     public static String getSeconds(long millis){
         float second= (float) (millis/1000.0);
-        System.out.print(second+"秒");
         return second+"秒";
     }
+
     public static long getMillis(String time){
         SimpleDateFormat format=new SimpleDateFormat(DATE_FORMAT);
         try {

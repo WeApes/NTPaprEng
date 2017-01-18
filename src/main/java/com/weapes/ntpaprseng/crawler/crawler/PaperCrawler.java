@@ -10,8 +10,8 @@ import java.util.concurrent.Executors;
  */
 class PaperCrawler implements Crawler {
 
-    //生产者消费者线程数,可以根据环境进行调整
-    private static final int CREATOR_THREAD_NUM = 1;
+    //生产者消费者线程数
+    private static final int CREATOR_THREAD_NUM = 30;
     private static final int CONSUMER_THREAD_NUM = 1;
 
     /*
@@ -31,7 +31,7 @@ class PaperCrawler implements Crawler {
     public void crawl() {
         System.out.print("开始爬取。系统时间：" + Helper.getCrawlTime() + "\n");
 
-        // 初始化上次爬取的最后一篇论文URL
+        // 获取上次爬取的最后一篇论文URL
         Helper.initLastUrlForLastTime();
         // 种子解析为followable
         // 对每个种子,交给生产者处理为Storable
