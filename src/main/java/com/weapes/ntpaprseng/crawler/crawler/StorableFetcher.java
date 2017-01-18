@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import static com.weapes.ntpaprseng.crawler.log.Log.getCrawlingFailedNumber;
+import static com.weapes.ntpaprseng.crawler.log.Log.getCrawlingSucceedNumbers;
+
 
 /**
  * Created by lawrence on 16/8/8.
@@ -37,14 +40,19 @@ class StorableFetcher<F extends Followable> implements Runnable {
     @Override
     public void run() {
         try {
-            final Extractable extractable = seed.follow();
-            if (!extractable.isMulti()) {
+            final Extractable extractable = seed.follow(); // 对高级检索后链接或论文链接follow
+            if (!extractable.isMulti()) { //如果是论文链接
                 dispatch(extractable.extract());
-            } else {
+            } else {//如果是高级检索后链接
                 List<? extends ExtractedObject> extractedObjectsList = extractable.extractAll();
-                if (extractedObjectsList.size() == 0){//没有待爬取论文
-                    Helper.isCrawlFinished = true;
-                    System.out.println("本次爬取论文" + Log.getUrlNumbers().get() + "篇。");
+                if (extractedObjectsList.size() == 0){//没有新刊登的待爬取论文
+                    Helper.isFirstUrl = true; //下次任务开始时有第一条论文url
+                    Helper.isCrawlFinished = true; //爬取任务结束
+                    getCrawlingSucceedNumbers().set(0);
+                    getCrawlingFailedNumber().set(0);
+                    Log.getCrawlingNumbers().set(0);
+
+                    System.out.println("本次爬取论文" + Log.getUrlNumbers() + "篇。");
                     System.out.println("爬取结束。");
                 }
 
@@ -64,9 +72,9 @@ class StorableFetcher<F extends Followable> implements Runnable {
      * @param extractedObject 被抽取后的Obj,可以为链接或可存储的对象
      */
     private void dispatch(final ExtractedObject extractedObject) {
-        if (extractedObject instanceof Followable) {
+        if (extractedObject instanceof Followable) {//如果是链接，则继续生产，进行follow和extract
              creator.submit(new StorableFetcher<>(creator, consumer, (Link) extractedObject));
-        } else {
+        } else {//如果不是链接 就是storable的爬取数据，进行消费
             consumer.submit(new StorableHandler<>((Storable) extractedObject));
         }
     }
