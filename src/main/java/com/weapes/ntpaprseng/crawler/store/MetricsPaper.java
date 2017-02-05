@@ -1,12 +1,10 @@
 package com.weapes.ntpaprseng.crawler.store;
 
+import com.weapes.ntpaprseng.crawler.crawler.DetailCrawler;
 import com.weapes.ntpaprseng.crawler.log.DBLog;
 import com.weapes.ntpaprseng.crawler.log.Log;
 import com.weapes.ntpaprseng.crawler.search.ESClient;
-import com.weapes.ntpaprseng.crawler.util.SQLHelper;
-import com.weapes.ntpaprseng.crawler.util.FormatHelper;
-import com.weapes.ntpaprseng.crawler.util.Helper;
-import com.weapes.ntpaprseng.crawler.util.TimeFormatter;
+import com.weapes.ntpaprseng.crawler.util.*;
 import com.zaxxer.hikari.HikariDataSource;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.slf4j.Logger;
@@ -17,7 +15,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import static com.weapes.ntpaprseng.crawler.log.Log.*;
-import static com.weapes.ntpaprseng.crawler.util.Helper.firstInsertUpdateDetailLog;
 import static com.weapes.ntpaprseng.crawler.util.Helper.getLogger;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -29,6 +26,8 @@ public class MetricsPaper implements Storable{
 
     private static final Logger LOGGER =
             getLogger(Paper.class);
+    //更新REF_DATA表的sql语句
+    private String REF_UPDATE_SQL = SQLHelper.getRefInsertSQL();
 
     private final String url;
     private final int pageViews;
@@ -169,71 +168,78 @@ public class MetricsPaper implements Storable{
     private int getQ_a() {
         return q_a;
     }
-    private int getFinalIndex() {
-        return 0;
+    private Double getFinalIndex(){
+        Double finalIndex=0.0;
+        try {
+             finalIndex= IndexHelper.build().addPageViews(pageViews)
+                    .addWebOfScience(webOfScience)
+                    .addCrossRef(crossRef)
+                    .addScopus(scopus)
+                    .addNewsOutlets(newsOutlets)
+                    .addReddit(reddit)
+                    .addBlog(blog)
+                    .addTweets(tweets)
+                    .addFacebook(facebook)
+                    .addGoogle(google)
+                    .addPinterest(pinterest)
+                    .addWikipedia(wikipedia)
+                    .addMendeley(mendeley)
+                    .addCiteUlink(citeUlink)
+                    .addZotero(zotero)
+                    .addF1000(f1000)
+                    .addVideo(video)
+                    .addLinkedin(linkedin)
+                    .addQ_a(q_a)
+                    .getFinalIndex();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return finalIndex;
     }
 
     @Override
     public boolean store() {
+        System.out.println("Store begin: type = MetricsPaper.");
         LOGGER.info("本次更新论文" + Log.getUpdateTotalNumbers().get() + "篇，"
                 + "正在更新第" + Log.getCurrentUpdateNumbers().incrementAndGet() + "篇\n"
                 + "链接为：" + getUrl());
-
-        System.out.println("保存爬取的数据: type = MetricsPaper.");
         final HikariDataSource mysqlDataSource = DataSource.getMysqlDataSource();
+        // 加上选择条件 URL
         try (final Connection connection = mysqlDataSource.getConnection()){
-            try (final PreparedStatement preparedStatement = connection.prepareStatement(SQLHelper.getRefInsertSQL())) {
+            try (final PreparedStatement preparedStatement = connection.prepareStatement(REF_UPDATE_SQL)) {
                 bindUpdateSql(preparedStatement);
                 // 判断执行是否成功
                 boolean succeed = preparedStatement.executeUpdate() != 0;
                 if (succeed) {
-                    LOGGER.info("当前共有" + getUpdateSucceedNumbers().incrementAndGet() + "篇论文相关指标更新成功..."
-                            + "链接为:" + getUrl());
+                    LOGGER.info("当前共有" + getUpdateSucceedNumbers().incrementAndGet() + "篇论文相关指标更新成功...\n"
+                            + "链接为；" + getUrl());
                 }else {
-                    LOGGER.info("当前共有" + getUpdateFailedNumbers().incrementAndGet() + "篇论文相关指标更新失败..."
-                            + "链接为:" + getUrl());
+                    LOGGER.info("当前共有" + getUpdateFailedNumbers().incrementAndGet() + "篇论文相关指标更新失败...\n"
+                            + "链接为；" + getUrl());
                 }
-//                boolean isSuccess= updateRefDataIntoES();//更新论文指标到ElasticSearch中的REF_DATA
-//                if (!isSuccess){
-//                    LOGGER.info("更新论文指标到ElasticSearch中的REF_DATA失败");
-//                }else {
-//                    LOGGER.info("更新论文指标到ElasticSearch中的REF_DATA成功");
-//                }
-                //保存更新的具体日志数据到数据库中
-                DBLog.saveUpdateDetailLog(getUrl(),
-                        getCurrentUpdateNumbers().get(),
-                        getUpdateTotalNumbers().get(),
-                        succeed,
-                        Helper.updateStartDate
-                        );
+                boolean isSuccess= updateRefDataIntoES();//更新论文指标到ElasticSearch中的REF_DATA
+                if (!isSuccess){
+                    LOGGER.info("更新论文指标到ElasticSearch中的REF_DATA失败");
+                }else {
+                    LOGGER.info("更新论文指标到ElasticSearch中的REF_DATA成功");
+                }
+                //保存更新的具体数据到数据库中
+                DBLog.saveUpdateDetailLog(getUrl(),getCurrentUpdateNumbers().get(),getUpdateTotalNumbers().get(),succeed,
+                        Helper.updateStartDate);
 
-                //更新完成，打印、保存日志和更新任务状态
                 if (getCurrentUpdateNumbers().get() == getUpdateTotalNumbers().get()) {
-                    LOGGER.info("更新完成，本次更新相关指标论文总量：" + getUpdateTotalNumbers().get()
+                    LOGGER.info("更新完成，本次更新相关指标论文总量：" +getUpdateTotalNumbers().get()
                             + " 成功数：" + getUpdateSucceedNumbers().get()
                             + " 失败数：" + getUpdateFailedNumbers());
-
-                    long startTime= Helper.updateStartTime;  //开始更新的时间
-                    long endTime=System.currentTimeMillis();//更新结束的时间
-                    String averageTime=Helper.getSeconds((endTime-startTime) / getUpdateTotalNumbers().get());
+                    long startTime= Helper.updateStartTime;//开始更新的时间
+                    long endTime=System.currentTimeMillis();//结束更新的时间
+                    long total=endTime-startTime;
+                    String averageTime=Helper.getSeconds(total/getUrlNumbers().get());
                     //保存更新完成后的总体情况数据到数据库中
-                    DBLog.saveFinalUpdateLog(
-                            Helper.updateStartDate,
-                            getUpdateSucceedNumbers().get(),
-                            getUpdateFailedNumbers().get(),
-                            getUpdateTotalNumbers().get(),
-                            averageTime);
-
-                    getUpdateSucceedNumbers().set(0);
-                    getUpdateFailedNumbers().set(0);
-                    Log.getCurrentUpdateNumbers().set(0);
-                    getCurrentUpdateNumbers().set(0);
-                    firstInsertUpdateDetailLog = true;
-                    Helper.isUpdateFinished = true;
+                    DBLog.saveFinalUpdateLog(Helper.updateStartDate,getUpdateSucceedNumbers().get(),
+                            getUpdateFailedNumbers().get(),getUpdateTotalNumbers().get(),averageTime);
                 }
                 return succeed;
-            }catch (SQLException e){
-                e.printStackTrace();
             }
         }catch (SQLException e){
             e.printStackTrace();
@@ -242,28 +248,27 @@ public class MetricsPaper implements Storable{
     }
 
     private void bindUpdateSql(final PreparedStatement preparedStatement) throws SQLException{
-        preparedStatement.setString(1, getUrl());
-        preparedStatement.setString(2, Helper.getUpdateTime());
-        preparedStatement.setInt(3, getPageViews());
-        preparedStatement.setInt(4,getWebOfScience());
-        preparedStatement.setInt(5,getCrossRef());
-        preparedStatement.setInt(6,getScopus());
-        preparedStatement.setInt(7,getNewsOutlets());
-        preparedStatement.setInt(8,getReddit());
-        preparedStatement.setInt(9,getBlog());
-        preparedStatement.setInt(10,getTweets());
-        preparedStatement.setInt(11,getFacebook());
-        preparedStatement.setInt(12,getGoogle());
-        preparedStatement.setInt(13,getPinterest());
-        preparedStatement.setInt(14,getWikipedia());
-        preparedStatement.setInt(15,getMendeley());
-        preparedStatement.setInt(16,getCiteUlink());
-        preparedStatement.setInt(17,getZotero());
-        preparedStatement.setInt(18,getF1000());
-        preparedStatement.setInt(19,getVideo());
-        preparedStatement.setInt(20,getLinkedin());
-        preparedStatement.setInt(21,getQ_a());
-        preparedStatement.setInt(22,getFinalIndex());
+        preparedStatement.setString(1, Helper.getUpdateTime());
+        preparedStatement.setInt(2, getPageViews());
+        preparedStatement.setInt(3,getWebOfScience());
+        preparedStatement.setInt(4,getCrossRef());
+        preparedStatement.setInt(5,getScopus());
+        preparedStatement.setInt(6,getNewsOutlets());
+        preparedStatement.setInt(7,getReddit());
+        preparedStatement.setInt(8,getBlog());
+        preparedStatement.setInt(9,getTweets());
+        preparedStatement.setInt(10,getFacebook());
+        preparedStatement.setInt(11,getGoogle());
+        preparedStatement.setInt(12,getPinterest());
+        preparedStatement.setInt(13,getWikipedia());
+        preparedStatement.setInt(14,getMendeley());
+        preparedStatement.setInt(15,getCiteUlink());
+        preparedStatement.setInt(16,getZotero());
+        preparedStatement.setInt(17,getF1000());
+        preparedStatement.setInt(18,getVideo());
+        preparedStatement.setInt(19,getLinkedin());
+        preparedStatement.setInt(20,getQ_a());
+        preparedStatement.setDouble(21,getFinalIndex());
     }
 
 

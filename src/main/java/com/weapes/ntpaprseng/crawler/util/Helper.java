@@ -3,7 +3,6 @@ package com.weapes.ntpaprseng.crawler.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.CalendarCodec;
 import com.weapes.ntpaprseng.crawler.follow.AdvSearchLink;
 import com.weapes.ntpaprseng.crawler.follow.PaperMetricsLink;
 import com.weapes.ntpaprseng.crawler.store.DataSource;
@@ -22,7 +21,6 @@ import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +113,7 @@ public final class Helper {
     }
 
     // 将配置文件映射为JSON对象
-    private static JSONObject fileMapToJSONObject(final String filePath)
+    public static JSONObject fileMapToJSONObject(final String filePath)
             throws IOException {
         final byte[] bytes =
                 Files.readAllBytes(new File(filePath).toPath());
