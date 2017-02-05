@@ -1,23 +1,24 @@
 {
   "weight":{
-    "Page_views" : 0,
-    "Web_Of_Science" : 0,
-    "CrossRef" : 0,
-    "Scopus" : 0,
-    "News_outlets" : 0,
-    "Reddit" : 0,
-    "Blog" : 0,
-    "Tweets" : 0,
-    "FaceBook" : 0,
-    "Google" : 0,
-    "Pinterest" : 0,
-    "Wikipedia" : 0,
-    "Mendeley" : 0,
-    "CiteUlink" : 0,
-    "Zotero" : 0,
-    "F10000" : 0,
-    "Video" : 0,
-    "Linkedin" : 0,
-    "Q_A" : 0
+    "pageViews" : 0,
+    "webOfScience" : 0,
+    "crossRef" : 0,
+    "scopus" : 0,
+    "newsOutlets" : 0,
+    "reddit" : 22,
+    "blog" : 0,
+    "tweets" : 0,
+    "facebook" : 0,
+    "google" : 0,
+    "pinterest" : 0,
+    "wikipedia" : 0,
+    "mendeley" : 0,
+    "citeUlink" : 0,
+    "zotero" : 0,
+    "f1000" : 0,
+    "video" : 0,
+    "linkedin" : 0,
+    "q_a" : 0
   }
+
 }

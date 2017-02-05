@@ -12,14 +12,6 @@ import java.sql.SQLException;
  * Created by  不一样的天空  on 2016/8/30.
  */
 public class SQLHelper {
-    // 通过URL来更新REF_DATA表
-//    private static final String REF_UPDATE_SQL =
-//            "UPDATE REF_DATA SET "+" UpdateTime = ?, "+"PageViews = ?, " + "WebOfScience = ?, " +
-//                    "CrossRef = ?, " + "Scopus = ?, " + "NewsOutlets = ?, " +
-//                    "Reddit = ?, " + "Blog = ?, " + "Tweets = ?, " + "Facebook = ?, " +
-//                    "Google = ?, " + "Pinterest = ?, " + "wikipedia = ?, " + "Mendeley = ?, " +
-//                    "CiteUlink = ?, " + "Zotero = ?, " + "F1000 = ?, " + "Video = ?, " +
-//                    "Linkedin = ?, " + "Q_A = ?," + "FinalIndex = ? "+ "WHERE URL = ";
 
     private static final String NT_PAPERS_INSERT_SQL =
             "INSERT INTO " + "NT_PAPERS(" +
@@ -37,10 +29,9 @@ public class SQLHelper {
 
     private static String CHANGE_UPDATE_TIME_SQL="INSERT INTO Time(times,date)"+"VALUES(?, ?)";
 
+
     private static String TIME=getUpdateTime();//从数据库中获取的第几次爬取的值
-//    public static  String getRefUpdateSQL(){
-//            return REF_UPDATE_SQL;
-//    }
+
     public static String getNtPapersInsertSQL(){
         return NT_PAPERS_INSERT_SQL;
     }
